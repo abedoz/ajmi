@@ -27,7 +27,7 @@ import {
   Sms,
   WhatsApp,
   ExpandMore,
-  Copy,
+  ContentCopy,
   Download
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -111,7 +111,7 @@ function MessageCard({ message, index }) {
           </Typography>
           <Tooltip title={copied ? "Copied!" : "Copy message"}>
             <IconButton onClick={handleCopy} size="small">
-              <Copy />
+              <ContentCopy />
             </IconButton>
           </Tooltip>
         </Box>
@@ -169,7 +169,9 @@ function OutreachGenerator({ aiSettings }) {
           prospects: prospects.slice(0, 20), // Limit to control costs
           courseId: selectedCourse,
           messageType,
-          aiApiKey: aiSettings.apiKey
+          aiApiKey: aiSettings.apiKey,
+          provider: aiSettings.provider || 'openai',
+          endpoint: aiSettings.endpoint || ''
         }),
       });
 

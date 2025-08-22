@@ -1,0 +1,7 @@
+# litellm.config.yaml
+model_list:
+  - model_name: gemini-2-pro
+    litellm_params:
+      provider: gemini
+      model: gemini-2.5-pro
+      api_key: ${AIzaSyBCuynGxtkyVd00o_zyp4mL06YSwyHjP2I}

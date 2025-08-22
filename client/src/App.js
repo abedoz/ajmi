@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ThemeProvider,
   createTheme,
@@ -14,10 +14,11 @@ import {
 } from '@mui/material';
 import { Toaster } from 'react-hot-toast';
 import DataUpload from './components/DataUpload';
-import Dashboard from './components/Dashboard';
+import InteractiveDashboard from './components/InteractiveDashboard';
 import RecommendationEngine from './components/RecommendationEngine';
 import OutreachGenerator from './components/OutreachGenerator';
 import Settings from './components/Settings';
+
 import './App.css';
 
 const theme = createTheme({
@@ -58,34 +59,133 @@ function TabPanel({ children, value, index, ...other }) {
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
-  const [dataSummary, setDataSummary] = useState({
-    courses: { total: 0, byStatus: [] },
-    trainees: { total: 0 },
-    enrollments: { total: 0 }
+  const [dataSummary, setDataSummary] = useState(null);
+  const [aiSettings, setAiSettings] = useState(() => {
+    // Load AI settings from localStorage if available
+    const savedSettings = localStorage.getItem('aiSettings');
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch (error) {
+        console.error('Error parsing saved AI settings:', error);
+      }
+    }
+    return {
+      provider: 'openai',
+      apiKey: '',
+      endpoint: '',
+      enableAI: false
+    };
   });
-  const [aiSettings, setAiSettings] = useState({
-    apiKey: '',
-    enableAI: false
-  });
+  const [authStatus, setAuthStatus] = useState(null);
+
+  // Function to save AI settings to localStorage
+  const saveAiSettings = useCallback((settings) => {
+    try {
+      localStorage.setItem('aiSettings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Error saving AI settings to localStorage:', error);
+    }
+  }, []);
+
+  // Function to update AI settings and save to localStorage
+  const updateAiSettings = useCallback((newSettings) => {
+    setAiSettings(newSettings);
+    saveAiSettings(newSettings);
+  }, [saveAiSettings]);
+
+  // Handle authentication status from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const auth = urlParams.get('auth');
+    const message = urlParams.get('message');
+    
+    if (auth && message) {
+      setAuthStatus({ type: auth, message: decodeURIComponent(message) });
+      
+      // If authentication was successful, automatically set Vertex AI as the default provider
+      if (auth === 'success' && message.includes('OAuth authentication successful')) {
+        updateAiSettings({
+          provider: 'vertex',
+          apiKey: '',
+          endpoint: '',
+          model: 'gemini-1.5-pro',
+          enableAI: true
+        });
+      }
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Auto-hide auth status after 5 seconds
+      setTimeout(() => {
+        setAuthStatus(null);
+      }, 5000);
+    }
+  }, [updateAiSettings]);
 
   const handleTabChange = (event, newValue) => {
+    console.log('Tab changed from', activeTab, 'to', newValue);
     setActiveTab(newValue);
+    
+    // Refresh data when switching to AI Trainee Recs tab (now index 2)
+    if (newValue === 2) {
+      console.log('Switching to AI Trainee Recs tab, refreshing data...');
+      refreshDataSummary();
+    }
   };
 
   const refreshDataSummary = async () => {
     try {
-      const response = await fetch('/api/data/summary');
+      console.log('Fetching data from /api/data...');
+      const response = await fetch('/api/data');
       if (response.ok) {
-        const summary = await response.json();
-        setDataSummary(summary);
+        const data = await response.json();
+        console.log('API response:', data);
+        console.log('data.success:', data.success);
+        console.log('data.data:', data.data);
+        console.log('data.data.courses:', data.data?.courses);
+        console.log('data.data.courses.length:', data.data?.courses?.length);
+        
+        if (data.success && data.data) {
+          // Transform the data to match the expected structure
+          const summary = {
+            courses: { 
+              total: data.data.courses ? data.data.courses.length : 0, 
+              byStatus: data.data.courses ? data.data.courses.reduce((acc, course) => {
+                const status = course.Status || course.status || 1;
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+              }, {}) : {}
+            },
+            trainees: { total: data.data.trainees ? data.data.trainees.length : 0 },
+            enrollments: { total: data.data.enrollments ? data.data.enrollments.length : 0 }
+          };
+          console.log('Transformed summary:', summary);
+          console.log('summary.courses.total:', summary.courses.total);
+          setDataSummary(summary);
+        } else {
+          console.log('No data in response, setting dataSummary to null');
+          setDataSummary(null);
+        }
+      } else {
+        console.log('Response not ok, setting dataSummary to null');
+        setDataSummary(null);
       }
     } catch (error) {
-      console.error('Error fetching data summary:', error);
+      console.error('Error fetching data:', error);
+      setDataSummary(null);
     }
   };
 
   useEffect(() => {
-    refreshDataSummary();
+    console.log('App.js useEffect triggered');
+    // Add a small delay to ensure component is fully mounted
+    const timer = setTimeout(() => {
+      refreshDataSummary();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -105,6 +205,27 @@ function App() {
       </AppBar>
 
       <Container maxWidth="xl" sx={{ mt: 2 }}>
+        {/* Authentication Status Display */}
+        {authStatus && (
+          <Box sx={{ mb: 2 }}>
+            <Paper 
+              elevation={1} 
+              sx={{ 
+                p: 2, 
+                backgroundColor: authStatus.type === 'success' ? '#e8f5e8' : '#ffebee',
+                border: `1px solid ${authStatus.type === 'success' ? '#4caf50' : '#f44336'}`
+              }}
+            >
+              <Typography 
+                variant="body1" 
+                color={authStatus.type === 'success' ? 'success.main' : 'error.main'}
+                sx={{ fontWeight: 500 }}
+              >
+                {authStatus.message}
+              </Typography>
+            </Paper>
+          </Box>
+        )}
         <Paper elevation={1} sx={{ mb: 2 }}>
           <Tabs
             value={activeTab}
@@ -114,15 +235,16 @@ function App() {
           >
             <Tab label="Dashboard" />
             <Tab label="Data Upload" />
-            <Tab label="Recommendations" />
+            <Tab label="Recommendation Engine" />
             <Tab label="Outreach" />
             <Tab label="Settings" />
           </Tabs>
         </Paper>
 
         <TabPanel value={activeTab} index={0}>
-          <Dashboard 
+          <InteractiveDashboard 
             dataSummary={dataSummary}
+            aiSettings={aiSettings}
             onRefresh={refreshDataSummary}
           />
         </TabPanel>
@@ -149,7 +271,7 @@ function App() {
         <TabPanel value={activeTab} index={4}>
           <Settings 
             aiSettings={aiSettings}
-            onSettingsChange={setAiSettings}
+            onAiSettingsChange={updateAiSettings}
           />
         </TabPanel>
       </Container>

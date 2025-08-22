@@ -1,76 +1,61 @@
 import React, { useState } from 'react';
 import {
-  Grid,
-  Paper,
-  Typography,
   Box,
+  Typography,
   Button,
-  LinearProgress,
   Alert,
+  CircularProgress,
+  Paper,
+  Grid,
   Card,
   CardContent,
   List,
   ListItem,
   ListItemText,
-  Chip
+  ListItemIcon,
+  Divider
 } from '@mui/material';
 import {
-  CloudUpload,
-  CheckCircle,
-  Error,
-  Info
+  CloudUpload as CloudUploadIcon,
+  CheckCircle as CheckCircleIcon,
+  Description as DescriptionIcon,
+  People as PeopleIcon,
+  School as SchoolIcon
 } from '@mui/icons-material';
-import { useDropzone } from 'react-dropzone';
-import toast from 'react-hot-toast';
 
-const uploadConfigs = [
-  {
-    key: 'courses',
-    title: 'Courses Data',
-    description: 'Upload CSV with CourseBasicDataId, CustomName, Status',
-    endpoint: '/api/upload/courses',
-    expectedColumns: ['CourseBasicDataId', 'CustomName', 'Status'],
-    example: 'COURSE001,Introduction to Programming,2'
-  },
-  {
-    key: 'trainees',
-    title: 'Trainees Data',
-    description: 'Upload CSV with MemberId, Name, Mobile, Email',
-    endpoint: '/api/upload/trainees',
-    expectedColumns: ['MemberId', 'Name', 'Mobile', 'Email'],
-    example: 'MEMBER001,John Doe,+1234567890,john@example.com'
-  },
-  {
-    key: 'enrollments',
-    title: 'Enrollments Data',
-    description: 'Upload CSV with MemberId, CourseId',
-    endpoint: '/api/upload/enrollments',
-    expectedColumns: ['MemberId', 'CourseId'],
-    example: 'MEMBER001,COURSE001'
-  }
-];
-
-function FileUploadCard({ config, onDataUploaded }) {
+const DataUpload = () => {
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
+  const [error, setError] = useState(null);
 
-  const onDrop = async (acceptedFiles) => {
-    const file = acceptedFiles[0];
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      const fileType = selectedFile.name.split('.').pop().toLowerCase();
+      if (['xlsx', 'xls', 'csv'].includes(fileType)) {
+        setFile(selectedFile);
+        setError(null);
+        setUploadResult(null);
+      } else {
+        setError('Please select a valid Excel (.xlsx, .xls) or CSV file.');
+        setFile(null);
+      }
+    }
+  };
+
+  const handleUpload = async () => {
     if (!file) return;
 
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      toast.error('Please upload a CSV file');
-      return;
-    }
-
     setUploading(true);
+    setError(null);
     setUploadResult(null);
 
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const response = await fetch(config.endpoint, {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -78,235 +63,260 @@ function FileUploadCard({ config, onDataUploaded }) {
       const result = await response.json();
 
       if (response.ok) {
-        setUploadResult({
-          success: true,
-          message: result.message,
-          count: result.count,
-          sample: result.sample
-        });
-        toast.success(`${config.title} uploaded successfully!`);
-        onDataUploaded();
+        setUploadResult(result);
       } else {
-        setUploadResult({
-          success: false,
-          message: result.error || 'Upload failed'
-        });
-        toast.error(result.error || 'Upload failed');
+        setError(result.error || 'Upload failed');
       }
     } catch (error) {
-      setUploadResult({
-        success: false,
-        message: 'Network error occurred'
-      });
-      toast.error('Network error occurred');
+      setError('Network error occurred during upload');
     } finally {
       setUploading(false);
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv']
-    },
-    multiple: false
-  });
+  const getFileIcon = (fileName) => {
+    const fileType = fileName.split('.').pop().toLowerCase();
+    if (['xlsx', 'xls'].includes(fileType)) {
+      return <DescriptionIcon color="primary" />;
+    }
+    return <DescriptionIcon />;
+  };
 
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          {config.title}
-        </Typography>
-        
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          {config.description}
-        </Typography>
-
-        <Box
-          {...getRootProps()}
-          className={`upload-area ${isDragActive ? 'dragover' : ''}`}
-          sx={{ mb: 2 }}
-        >
-          <input {...getInputProps()} />
-          <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="body1" gutterBottom>
-            {isDragActive ? 'Drop the file here' : 'Drag & drop CSV file here'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            or click to select file
-          </Typography>
-          <Button variant="outlined" component="span">
-            Select File
-          </Button>
-        </Box>
-
-        {uploading && (
-          <Box mb={2}>
-            <LinearProgress />
-            <Typography variant="body2" align="center" mt={1}>
-              Uploading...
-            </Typography>
-          </Box>
-        )}
-
-        {uploadResult && (
-          <Alert 
-            severity={uploadResult.success ? 'success' : 'error'}
-            icon={uploadResult.success ? <CheckCircle /> : <Error />}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="body2">
-              {uploadResult.message}
-            </Typography>
-            {uploadResult.success && uploadResult.count && (
-              <Typography variant="body2" mt={1}>
-                Processed {uploadResult.count} records
-              </Typography>
-            )}
-          </Alert>
-        )}
-
-        <Box>
-          <Typography variant="subtitle2" gutterBottom>
-            Expected Columns:
-          </Typography>
-          <Box mb={2}>
-            {config.expectedColumns.map((column) => (
-              <Chip
-                key={column}
-                label={column}
-                size="small"
-                sx={{ mr: 1, mb: 1 }}
-              />
-            ))}
-          </Box>
-          
-          <Typography variant="subtitle2" gutterBottom>
-            Example Row:
-          </Typography>
-          <Box
-            sx={{
-              backgroundColor: 'grey.100',
-              p: 1,
-              borderRadius: 1,
-              fontFamily: 'monospace',
-              fontSize: '0.875rem'
-            }}
-          >
-            {config.example}
-          </Box>
-        </Box>
-
-        {uploadResult?.success && uploadResult.sample && (
-          <Box mt={2}>
-            <Typography variant="subtitle2" gutterBottom>
-              Sample Data:
-            </Typography>
-            <Box
-              sx={{
-                backgroundColor: 'success.50',
-                p: 2,
-                borderRadius: 1,
-                maxHeight: 150,
-                overflow: 'auto'
-              }}
-            >
-              <pre style={{ fontSize: '0.75rem', margin: 0 }}>
-                {JSON.stringify(uploadResult.sample, null, 2)}
-              </pre>
-            </Box>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function DataUpload({ onDataUploaded }) {
-  return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
         Data Upload
       </Typography>
       
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="body1" gutterBottom>
-          <strong>Upload Instructions:</strong>
-        </Typography>
-        <List dense>
-          <ListItem>
-            <ListItemText primary="1. Upload your CSV files in the correct format" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="2. Ensure column headers match the expected format" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="3. Files will be processed immediately after upload" />
-          </ListItem>
-          <ListItem>
-            <ListItemText primary="4. You can re-upload files to update the data" />
-          </ListItem>
-        </List>
-      </Alert>
-
-      <Grid container spacing={3}>
-        {uploadConfigs.map((config) => (
-          <Grid item xs={12} md={4} key={config.key}>
-            <FileUploadCard 
-              config={config}
-              onDataUploaded={onDataUploaded}
-            />
-          </Grid>
-        ))}
-      </Grid>
-
-      <Paper sx={{ p: 3, mt: 4 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Data Format Guidelines
+          Upload Training Data
         </Typography>
         
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" gutterBottom>
-              Course Status Values:
-            </Typography>
-            <List dense>
-              <ListItem><ListItemText primary="1 - Created" /></ListItem>
-              <ListItem><ListItemText primary="2 - Opened" /></ListItem>
-              <ListItem><ListItemText primary="3 - Running" /></ListItem>
-              <ListItem><ListItemText primary="4 - Closed" /></ListItem>
-              <ListItem><ListItemText primary="5 - Archived" /></ListItem>
-            </List>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Upload a single Excel file with three sheets:</strong>
+          </Typography>
+          <List dense sx={{ mt: 1 }}>
+            <ListItem sx={{ py: 0 }}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <SchoolIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Courses Sheet" 
+                secondary="CourseBasicDatald, CustomName, Status (1-5)" 
+              />
+            </ListItem>
+            <ListItem sx={{ py: 0 }}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <PeopleIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Trainees Sheet" 
+                secondary="Memberld, Name, Email, Phone" 
+              />
+            </ListItem>
+            <ListItem sx={{ py: 0 }}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <DescriptionIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Enrollments Sheet" 
+                secondary="Memberld, Courseld" 
+              />
+            </ListItem>
+          </List>
+          
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => window.open('/api/template', '_blank')}
+              sx={{ mt: 1 }}
+            >
+              Download Excel Template
+            </Button>
+          </Box>
+        </Alert>
+
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={8}>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUploadIcon />}
+              fullWidth
+              sx={{ height: 56 }}
+            >
+              {file ? file.name : 'Choose Excel File (.xlsx, .xls) or CSV'}
+              <input
+                type="file"
+                hidden
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+              />
+            </Button>
           </Grid>
           
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" gutterBottom>
-              File Requirements:
-            </Typography>
-            <List dense>
-              <ListItem><ListItemText primary="• CSV format only" /></ListItem>
-              <ListItem><ListItemText primary="• UTF-8 encoding recommended" /></ListItem>
-              <ListItem><ListItemText primary="• First row should contain headers" /></ListItem>
-              <ListItem><ListItemText primary="• No empty rows or columns" /></ListItem>
-            </List>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" gutterBottom>
-              Data Quality Tips:
-            </Typography>
-            <List dense>
-              <ListItem><ListItemText primary="• Use consistent ID formats" /></ListItem>
-              <ListItem><ListItemText primary="• Avoid special characters in IDs" /></ListItem>
-              <ListItem><ListItemText primary="• Ensure email formats are valid" /></ListItem>
-              <ListItem><ListItemText primary="• Include country codes for phones" /></ListItem>
-            </List>
+          <Grid item xs={12} sm={4}>
+            <Button
+              variant="contained"
+              onClick={handleUpload}
+              disabled={!file || uploading}
+              fullWidth
+              sx={{ height: 56 }}
+            >
+              {uploading ? <CircularProgress size={24} /> : 'Upload'}
+            </Button>
           </Grid>
         </Grid>
+
+        {file && (
+          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            {getFileIcon(file.name)}
+            <Typography variant="body2" color="text.secondary">
+              {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+            </Typography>
+          </Box>
+        )}
       </Paper>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {uploadResult && (
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <CheckCircleIcon color="success" />
+            <Typography variant="h6" color="success.main">
+              Upload Successful!
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <SchoolIcon color="primary" />
+                    <Typography variant="h6">Courses</Typography>
+                  </Box>
+                  <Typography variant="h4" color="primary">
+                    {uploadResult.summary.courses}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total courses uploaded
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <PeopleIcon color="primary" />
+                    <Typography variant="h6">Trainees</Typography>
+                  </Box>
+                  <Typography variant="h4" color="primary">
+                    {uploadResult.summary.trainees}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total trainees uploaded
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <DescriptionIcon color="primary" />
+                    <Typography variant="h6">Enrollments</Typography>
+                  </Box>
+                  <Typography variant="h4" color="primary">
+                    {uploadResult.summary.enrollments}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total enrollments uploaded
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>
+            Data Structure Summary
+          </Typography>
+          
+          <Grid container spacing={2}>
+            {uploadResult.sheets.courses.length > 0 && (
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Courses Sheet Columns
+                    </Typography>
+                    <List dense>
+                      {uploadResult.sheets.courses.map((header, index) => (
+                        <ListItem key={index} sx={{ py: 0 }}>
+                          <ListItemText primary={header} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {uploadResult.sheets.trainees.length > 0 && (
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Trainees Sheet Columns
+                    </Typography>
+                    <List dense>
+                      {uploadResult.sheets.trainees.map((header, index) => (
+                        <ListItem key={index} sx={{ py: 0 }}>
+                          <ListItemText primary={header} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {uploadResult.sheets.enrollments.length > 0 && (
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Enrollments Sheet Columns
+                    </Typography>
+                    <List dense>
+                      {uploadResult.sheets.enrollments.map((header, index) => (
+                        <ListItem key={index} sx={{ py: 0 }}>
+                          <ListItemText primary={header} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+          </Grid>
+        </Paper>
+      )}
     </Box>
   );
-}
+};
 
 export default DataUpload;

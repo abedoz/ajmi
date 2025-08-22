@@ -1,307 +1,183 @@
-# Training Center Recommendation Tool
+# Training Center Management System
 
-An AI-powered recommendation system designed to help training centers increase sales by analyzing historical data and generating targeted prospect lists with personalized outreach messages.
+A comprehensive web application for managing training courses, trainees, and enrollments with AI-powered insights and recommendations.
 
-## 🚀 Features
+## Features
 
-### Core Functionality
-- **4 Recommendation Strategies**: Similar courses, skill progression, popular courses, and skill gap analysis
-- **CSV Data Import**: Easy upload of courses, trainees, and enrollment data
-- **Interactive Dashboard**: Real-time analytics and data visualization
-- **Flexible Filtering**: Course status filtering and customizable recommendation parameters
-- **Export Capabilities**: Download prospect lists as CSV files
+- **Single File Upload**: Upload one Excel file with three sheets (Courses, Trainees, Enrollments)
+- **Data Processing**: Automatic processing of Excel (.xlsx, .xls) and CSV files
+- **Dashboard Analytics**: Real-time statistics and insights
+- **AI Integration**: Multiple AI providers support (OpenAI, Azure OpenAI, Google Gemini, Claude, Vertex AI)
+- **Recommendation Engine**: AI-powered course recommendations for trainees
+- **Outreach Generation**: Automated outreach message creation
+- **Export Functionality**: Export data to CSV format
 
-### AI-Powered Enhancements
-- **Enhanced Course Descriptions**: AI-generated compelling course descriptions
-- **Personalized Insights**: Customized recommendations for each trainee
-- **Automated Outreach**: Generate personalized emails, SMS, and WhatsApp messages
-- **Predictive Analytics**: AI-powered insights for sales optimization
+## File Upload Format
 
-### Modern UI/UX
-- **Material-UI Design**: Clean, professional interface
-- **Responsive Layout**: Works on desktop and mobile devices
-- **Real-time Updates**: Live data processing and visualization
-- **Intuitive Navigation**: Tab-based interface for easy access
+The system expects a single Excel file with three sheets:
 
-## 📋 Requirements
+### 1. Courses Sheet
+- **CourseBasicDatald**: Unique course identifier
+- **CustomName**: Course name/title
+- **Status**: Course status (1=Created, 2=Opened, 3=Running, 4=Closed, 5=Archived)
 
-### System Requirements
-- Node.js 16+ 
+### 2. Trainees Sheet
+- **Memberld**: Unique trainee identifier
+- **Name**: Trainee's full name
+- **Email**: Email address
+- **Phone**: Phone number
+
+### 3. Enrollments Sheet
+- **Memberld**: Trainee identifier (must match Trainees sheet)
+- **Courseld**: Course identifier (must match Courses sheet)
+
+## Quick Start
+
+1. **Download Template**: Use the "Download Excel Template" button in the Data Upload section
+2. **Fill Your Data**: Populate the template with your training data
+3. **Upload File**: Upload the completed Excel file
+4. **View Dashboard**: See your data visualized in the dashboard
+5. **Generate Insights**: Use AI-powered analysis and recommendations
+
+## Installation
+
+### Prerequisites
+- Node.js (v14 or higher)
 - npm or yarn
-- Modern web browser
-- OpenAI API key (for AI features)
 
-### Data Requirements
-Your CSV files should contain:
+### Setup
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd training-center-system
+   ```
 
-#### Courses Data
-- `CourseBasicDataId`: Unique course identifier
-- `CustomName`: Course name/title
-- `Status`: Course status (1=Created, 2=Opened, 3=Running, 4=Closed, 5=Archived)
+2. Install dependencies:
+   ```bash
+   npm install
+   cd client && npm install
+   cd ..
+   ```
 
-#### Trainees Data
-- `MemberId`: Unique trainee identifier
-- `Name`: Trainee's full name
-- `Mobile`: Phone number (optional)
-- `Email`: Email address (optional)
+3. Create a `.env` file in the root directory:
+   ```env
+   # AI Provider Configuration
+   OPENAI_API_KEY=your_openai_api_key
+   AZURE_OPENAI_API_KEY=your_azure_api_key
+   AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+   GOOGLE_API_KEY=your_gemini_api_key
+   ANTHROPIC_API_KEY=your_claude_api_key
+   
+   # Google Cloud Vertex AI (Optional)
+   GOOGLE_CLOUD_PROJECT=your_project_id
+   GOOGLE_CLOUD_LOCATION=us-central1
+   GOOGLE_GENAI_USE_VERTEXAI=True
+   ```
 
-#### Enrollments Data
-- `MemberId`: Trainee identifier (matches trainees data)
-- `CourseId`: Course identifier (matches courses data)
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## 🛠️ Installation
+5. Open your browser and navigate to `http://localhost:3000`
 
-### 1. Clone and Install Dependencies
+## AI Providers
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd training-center-recommendations
+### OpenAI
+- Models: GPT-3.5-turbo, GPT-4
+- Configuration: API key only
 
-# Install server dependencies
-npm install
+### Azure OpenAI
+- Models: Custom endpoint models
+- Configuration: API key + endpoint URL
 
-# Install client dependencies
-cd client && npm install
-```
+### Google Gemini (AI Studio)
+- Models: gemini-pro, gemini-1.5-pro
+- Configuration: API key only
 
-### 2. Environment Setup
+### Anthropic Claude
+- Models: claude-3-sonnet-20240229
+- Configuration: API key only
 
-```bash
-# Copy environment template
-cp .env.example .env
+### Google Cloud Vertex AI
+- Models: gemini-2.0-flash, text-bison, chat-bison
+- Configuration: Project ID + location + API key
+- Requires Google Cloud authentication setup
 
-# Edit .env file with your configuration
-# Note: OpenAI API key is configured through the web interface
-```
+## Usage
 
-### 3. Start the Application
+### Data Upload
+1. Navigate to the Data Upload section
+2. Download the Excel template to understand the format
+3. Fill in your data following the template structure
+4. Upload the completed file
+5. Verify the upload summary
 
-```bash
-# Development mode (runs both server and client)
-npm run dev
-
-# Or run separately:
-# Terminal 1 - Server
-npm run server
-
-# Terminal 2 - Client
-npm run client
-```
-
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-
-## 📊 Usage Guide
-
-### 1. Data Upload
-1. Navigate to the **Data Upload** tab
-2. Upload your CSV files in the correct format:
-   - **Courses**: CourseBasicDataId, CustomName, Status
-   - **Trainees**: MemberId, Name, Mobile, Email
-   - **Enrollments**: MemberId, CourseId
-3. Verify the upload was successful
-
-### 2. Configure AI Settings (Optional)
-1. Go to **Settings** tab
-2. Enter your OpenAI API key
-3. Enable AI features
-4. Test the connection
-
-### 3. Generate Recommendations
-1. Open the **Recommendations** tab
-2. Select recommendation strategy:
-   - **Similar Courses**: Find prospects based on enrollment patterns
-   - **Skill Progression**: Suggest next steps in learning paths
-   - **Popular Courses**: Recommend trending courses
-   - **Skill Gaps**: Identify missing competencies
-3. Choose course statuses to include
-4. Enable AI enhancement if desired
-5. Click "Generate Recommendations"
-
-### 4. Create Outreach Messages
-1. Copy recommendations from the previous step
-2. Go to **Outreach** tab
-3. Paste prospect data
-4. Select message type (Email, SMS, WhatsApp)
-5. Enter target course ID
-6. Generate personalized messages
-
-### 5. Export and Use
-- Export prospect lists as CSV files
-- Copy generated messages for your outreach campaigns
-- Monitor performance through the dashboard
-
-## 🎯 Recommendation Strategies Explained
-
-### Similar Courses
-Analyzes enrollment patterns to find courses frequently taken together. Recommends prospects who took similar courses but haven't enrolled in the target course.
-
-**Best for**: Cross-selling related courses, expanding enrollment in complementary programs.
-
-### Skill Progression
-Identifies logical learning paths and recommends next-step courses based on completed coursework and similar trainee patterns.
-
-**Best for**: Upselling advanced courses, creating learning journeys.
-
-### Popular Courses
-Recommends high-enrollment courses to prospects with similar interests or backgrounds.
-
-**Best for**: Promoting successful courses, attracting new trainees.
-
-### Skill Gaps
-Identifies missing courses in common learning sequences and recommends prospects who have gaps in their training.
-
-**Best for**: Completing learning paths, improving course completion rates.
-
-## 🤖 AI Features
-
-### Course Descriptions
-AI generates compelling, professional descriptions for your courses that highlight key benefits and appeal to potential trainees.
-
-### Personalized Insights
-Each recommendation includes a personalized explanation of why the course is relevant to that specific trainee.
-
-### Outreach Messages
-Generate three types of personalized messages:
-- **Email**: Professional format with subject lines
-- **SMS**: Brief, action-oriented messages (160 characters)
-- **WhatsApp**: Conversational tone with emojis
-
-### Predictive Analytics
-AI analyzes your data to provide actionable insights for improving sales and course recommendations.
-
-## 📁 Project Structure
-
-```
-training-center-recommendations/
-├── server/                 # Backend Express.js application
-│   ├── services/          # Business logic services
-│   │   ├── aiService.js   # OpenAI integration
-│   │   ├── dataProcessor.js # Data processing utilities
-│   │   └── recommendationEngine.js # Recommendation algorithms
-│   └── index.js           # Main server file
-├── client/                # React frontend application
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   │   ├── Dashboard.js
-│   │   │   ├── DataUpload.js
-│   │   │   ├── RecommendationEngine.js
-│   │   │   ├── OutreachGenerator.js
-│   │   │   └── Settings.js
-│   │   ├── App.js         # Main app component
-│   │   └── index.js       # React entry point
-│   └── public/            # Static assets
-├── uploads/               # Temporary file uploads (auto-created)
-├── package.json           # Server dependencies
-└── README.md             # This file
-```
-
-## 🔧 API Endpoints
-
-### Data Management
-- `POST /api/upload/courses` - Upload courses CSV
-- `POST /api/upload/trainees` - Upload trainees CSV  
-- `POST /api/upload/enrollments` - Upload enrollments CSV
-- `GET /api/data/summary` - Get data summary
-
-### Recommendations
-- `POST /api/recommendations` - Generate recommendations
-- `POST /api/export/prospects` - Export prospects as CSV
+### Dashboard
+- View overall statistics and data quality
+- Monitor course status distribution
+- Track enrollment trends
+- Identify top-performing courses
 
 ### AI Features
-- `POST /api/test-openai` - Test OpenAI API key
-- `POST /api/outreach/generate` - Generate outreach messages
-- `POST /api/analytics/insights` - Generate AI insights
+- Generate course recommendations
+- Create personalized outreach messages
+- Analyze training patterns
+- Get insights on trainee behavior
 
-## 🔐 Security & Privacy
+## API Endpoints
 
-- **Local Storage**: OpenAI API keys are stored locally in your browser
-- **No Data Transmission**: Your API key is never sent to our servers
-- **Secure Processing**: All data processing happens on your infrastructure
-- **HTTPS Ready**: Production deployment supports SSL/TLS
+- `POST /api/upload` - Upload training data file
+- `GET /api/data` - Retrieve processed data
+- `GET /api/template` - Download Excel template
+- `POST /api/test-ai-key` - Test AI provider configuration
+- `POST /api/generate-recommendations` - Generate AI recommendations
+- `POST /api/generate-outreach` - Create outreach messages
 
-## 💰 Cost Considerations
+## Development
 
-AI features use the OpenAI API, which incurs costs based on usage:
-
-- **Course Descriptions**: ~$0.002 per course
-- **Personalized Insights**: ~$0.001 per recommendation  
-- **Outreach Messages**: ~$0.003 per message
-- **Analytics Insights**: ~$0.01 per analysis
-
-**Cost Optimization Tips**:
-- Limit AI enhancement to high-priority prospects
-- Test with small batches first
-- Monitor usage in OpenAI dashboard
-- Use AI features selectively
-
-## 🚀 Production Deployment
-
-### Build for Production
-```bash
-# Build the React client
-cd client && npm run build
-
-# The built files will be in client/build/
-# The Express server serves these files automatically
+### Project Structure
+```
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   └── App.js         # Main application
+├── server/                 # Node.js backend
+│   ├── services/          # Business logic services
+│   └── index.js           # Express server
+├── uploads/               # Temporary file storage
+└── package.json           # Dependencies and scripts
 ```
 
-### Environment Variables
-```bash
-# .env file for production
-OPENAI_API_KEY=your_key_here  # Optional: can be set via UI
-PORT=5000
-NODE_ENV=production
-```
+### Available Scripts
+- `npm run dev` - Start development server (both frontend and backend)
+- `npm run server` - Start backend server only
+- `npm run client` - Start frontend development server only
+- `npm run build` - Build production frontend
 
-### Deployment Options
-- **Self-hosted**: Deploy on your own servers
-- **Cloud Platforms**: Heroku, AWS, DigitalOcean, etc.
-- **Docker**: Container-ready application
+## Troubleshooting
 
-## 🤝 Support & Contributing
+### Common Issues
 
-### Getting Help
-1. Check the troubleshooting section below
-2. Review the API documentation
-3. Open an issue with detailed information
+1. **Port Conflicts**: If ports 3000 or 5000 are in use, the system will automatically find available ports
+2. **File Upload Errors**: Ensure your Excel file has the correct sheet names and column headers
+3. **AI API Errors**: Verify your API keys and provider configuration in Settings
+4. **Data Not Loading**: Check that your file was uploaded successfully and contains valid data
 
-### Troubleshooting
+### Vertex AI Setup
+1. Enable Vertex AI API in Google Cloud Console
+2. Set up authentication: `gcloud auth application-default login`
+3. Set project: `gcloud config set project YOUR_PROJECT_ID`
+4. Configure environment variables in `.env` file
 
-**Common Issues**:
+## Contributing
 
-1. **CSV Upload Fails**
-   - Check file format and column headers
-   - Ensure UTF-8 encoding
-   - Remove empty rows/columns
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-2. **AI Features Not Working**
-   - Verify OpenAI API key in Settings
-   - Check API key permissions and quota
-   - Test connection using the built-in test
-
-3. **No Recommendations Generated**
-   - Ensure all three data files are uploaded
-   - Check course status filters
-   - Verify data relationships (matching IDs)
-
-4. **Performance Issues**
-   - Limit recommendation batch sizes
-   - Use pagination for large datasets
-   - Consider upgrading server resources
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🔄 Version History
-
-- **v1.0.0**: Initial release with core recommendation features
-- **v1.1.0**: Added AI integration and outreach generation
-- **v1.2.0**: Enhanced UI/UX and analytics dashboard
-
----
-
-**Built with ❤️ for training centers worldwide**
